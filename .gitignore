@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+csv/*.csv
+csv/complete
+!csv/ARNmTweets_20210225231507.csv
+.Renviron
+gephi/Projet2
+gephi/network
