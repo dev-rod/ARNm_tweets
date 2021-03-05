@@ -8,6 +8,8 @@ if("tidyverse" %in% rownames(installed.packages()) == FALSE) {install.packages("
 if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("lubridate")};library(lubridate)
 if("plyr" %in% rownames(installed.packages()) == FALSE) {install.packages("plyr")};library(plyr)
 if("rgexf" %in% rownames(installed.packages()) == FALSE) {install.packages("rgexf")};library(rgexf)
+if("zip" %in% rownames(installed.packages()) == FALSE) {install.packages("zip")};library(zip)
+if("doFuture" %in% rownames(installed.packages()) == FALSE) {install.packages("doFuture")};library(doFuture)
 
 # generate tweeter token for session
 create_token(
@@ -19,61 +21,144 @@ create_token(
     set_renv = TRUE
 )
 
-
 # ymd_hms(now())
 # format(Sys.Date(), format="%Y%m%d%H%M%S")
 # format(now(), format="%Y%m%d%H%M%S")
+# ("user_id", "status_id", "created_at", "screen_name", "text", "reply_to_status_id", "reply_to_user_id",
+#  "is_quote", "is_retweet", "hashtags", "mentions_user_id", "quoted_status_id", "quoted_text", "quoted_created_at"
+#  "quoted_user_id", "retweet_status_id", "retweet_user_id", "name", "location", "description", "followers_count"
+#  "friends_count", "account_created_at", "verified", "profile_url", "query")
 
-## search for tweets
+## On récupère les tweets traitant des vaccins à arn messager sur les 7 derniers jours
 # https://www.rdocumentation.org/packages/rtweet/versions/0.7.0/topics/search_tweets
 tweets <- search_tweets2(
     c("\"arn messager\" OR ARNm", "vaccin AND (pfizer OR biontech OR moderna OR ARNm)", "vaccin AND (fiabilité OR fiable OR efficace OR inefficacité OR inefficace OR efficacité OR inopérant OR faible OR inutile OR sûreté OR sureté OR sûr)"), n=18000, type="recent", include_rts=TRUE, lang="fr", retryonratelimit = TRUE
 )
-# save tweets in csv file
-write_as_csv(tweets, str_c("csv/ARNmTweets_", format(now(), format="%Y%m%d%H%M%S"), ".csv"), prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
 
+# On sauvegarde les derniers tweets récupérés dans un fichier csv zippé
+file_date <- format(now(), format="%Y%m%d%H%M%S")
+filename_csv  <- str_c("csv/ARNmTweets_", file_date, ".csv")
+filename_zip  <- str_c("csv/ARNmTweets_", file_date, ".zip")
+write_as_csv(tweets, filename_csv, prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+zipr(filename_zip, filename_csv)
 
-##########################################
-tweets <- search_tweets2(
-    c("\"arn messager\" OR ARNm", "vaccin AND (pfizer OR biontech OR moderna OR ARNm)", "vaccin AND (fiabilité OR fiable OR efficace OR inefficacité OR inefficace OR efficacité OR inopérant OR faible OR inutile OR sûreté OR sureté OR sûr)"), n=18000, type="recent", include_rts=TRUE, lang="fr", retryonratelimit = FALSE
-)
-#colnames(tweets)
-data_tweet <- tweets[,c(1:5,8:9,11:12,17,30,33:35,39,48,54,73:75,78,79,83:85,91)]
-#write_as_csv(data_tweet, str_c("csv/data_tweet_", format(now(), format="%Y%m%d%H%M%S"), ".csv"), prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+# Pour regénérer le fichier complet des tweets
+## On passe en mode parallèle avec les coeurs du processeur disponible sur cette session R
+registerDoFuture()
+plan(multisession)
 
+# pour chacun des fichiers csv zippés récupérés
+readTweetFile <- function(filename)
+{
+    tweets <- read_csv(filename)
+    
+    #message(colnames(tweets))
+    
+    message("------------------------------")
+    message(filename)
+    #message(str(tweets$query))
+    message(length(colnames(tweets)))
+    message("------------------------------")
+    
+    # on retire les colonnes en trop
+    tweets <- tweets[,c(1:5,8:9,12,17,30,48,54,73:75,78,79,83,85)]
+    uniq_tweets <- tweets %>%
+        arrange(status_id, followers_count, friends_count) %>%
+        distinct_at(vars(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description, followers_count, friends_count))
+    
+    # uniq_tweets <- tweets %>%
+    #     distinct_at(vars(-query))
+    
+    return(uniq_tweets)
+}
 
-followers_counts+friends_count
+tweetsCsvFiles <- list.files(path="csv", pattern="*.zip", full.names=TRUE)
+#tweetsCsvFiles <- "csv/ARNmTweets_20210131095600.zip"
+all_tweets <- ldply(.data = tweetsCsvFiles, .fun = readTweetFile, .parallel = TRUE)
 
-arn_query_twt <- data_tweet[which(data_tweet$query=="\"arn messager\" OR ARNm") ,]
-hahstags <- data_tweet[which(data_tweet$is_retweet==TRUE) ,]
-retweets <- data_tweet[which(data_tweet$is_retweet==TRUE) ,]
+# On repasse en mode séquentiel
+plan(sequential)
 
-# user_id, retweet_user_id, "mentions_user_id"
+all_tweets_sorted <- all_tweets %>%
+    arrange(status_id, followers_count, friends_count) %>%
+    distinct_at(vars(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description, followers_count, friends_count))
+
+# de manière générale on garde les infos les plus récentes en fonction du nombre de followers 
+# qui a plus tendance à augmenter qu'a diminuer
+
+all_tweets_mutated <- all_tweets_sorted %>%
+    group_by(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, hashtags, mentions_user_id, retweet_status_id, retweet_user_id) %>%
+    dplyr::mutate(name = last(name)) %>%
+    dplyr::mutate(location = last(location)) %>%
+    dplyr::mutate(description = last(description))
+
+all_tweets_summarised <- all_tweets_mutated %>%
+    group_by(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description) %>%
+    summarise_at(vars(followers_count, friends_count), funs(max))
+
+all_tweets_distincted <- all_tweets_summarised %>%
+    distinct(status_id)
+
+# si on a encore des doublons, on regarde sur quels tweets et quels champs il subsiste des doublons pour analyse
+if(nrow(all_tweets_summarised) != nrow(all_tweets_distincted)) {
+    nb_occurence_by_tweet_distincted <- data.frame(table(all_tweets_distincted$status_id))
+    doublon_anormal <- nb_occurence_by_tweet_distincted[nb_occurence_by_tweet_distincted$Freq>1,]
+    tweets_again_duplicated <- all_tweets_summarised %>%
+        filter(status_id %in% doublon_anormal$Var1)
+    view(tweets_again_duplicated)
+}
+
+# On sauvegarde tous les tweets récupérés dans un fichier csv zippé
+filename_csv  <- str_c("csv/complete/ARNmTweets_full", ".csv")
+filename_zip  <- str_c("csv/complete/ARNmTweets_full", ".zip")
+write_as_csv(all_tweets_summarised, filename_csv, prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+zipr(filename_zip, filename_csv)
+
+# On génère le fichier gephi pour analyse le graphe des retweet
+retweets <- all_tweets_summarised[which(all_tweets_summarised$is_retweet==TRUE) ,]
+
+# user_id, screen_name
 gexf_nodes <- distinct(retweets[,c(1,4)])
-gexf_edges <- retweets[,c(17,1)]
-gexf_edgesId <- retweets[,c(2)]
-gexf_edgesWeight <- retweets[,c(2)]
-nodesAtt
+# retweet_user_id, user_id
+gexf_edges <- retweets[,c(12,1)]
+# status_id
+#gexf_edgesId <- retweets[,c(2)]
+# status_id
+#gexf_edgesWeight <- retweets[,c(2)]
 
-str(gexf_nodes)
-str(gexf_edges)
 # generate 
 write.gexf(nodes=gexf_nodes, edges=gexf_edges, output=str_c("gexf/ARNmTweets_", format(now(), format="%Y%m%d%H%M%S"), ".gexf"))
-##########################################
 
-mydir = "csv"
-myfiles = list.files(path=mydir, pattern="*.csv", full.names=TRUE)
-myfiles
-all_tweets = ldply(myfiles, read_csv)
-summary(all_tweets)
 
-uniq_all_tweets <- all_tweets %>% distinct(user_id, status_id, created_at, screen_name, text, reply_to_status_id, is_quote, is_retweet, retweet_count, quote_count, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, geo_coords, coords_coords, followers_count, friends_count )
-write_as_csv(uniq_all_tweets, str_c("csv/complete/completeARNmTweets_", format(now(), format="%Y%m%d%H%M%S"), ".csv"), prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+# On génère le fichier gephi pour analyse le graphe des hashtags
+hahstags <- all_tweets_distincted[which(!is.na(all_tweets_distincted$hashtags)) ,]
+# # user_id, retweet_user_id, "hashtags"
+# gexf_nodes <- distinct(retweets[,c(1,4)])
+# gexf_edges <- retweets[,c(17,1)]
+# write.gexf(nodes=gexf_nodes, edges=gexf_edges, output=str_c("gexf/ARNmTweets_", format(now(), format="%Y%m%d%H%M%S"), ".gexf"))
 
-sapply (uniq_all_tweets, function(x) length(unique(x)))
-# environ 60 000 user pour 180 000 tweets et 100 000 retweet et 60 000 ???
 
-uniq_all_tweets %>%
+
+# on génère un nuage de mots
+# all_tweets_distincted
+
+# on analyse les sentiments
+# all_tweets_distincted
+
+
+
+
+
+
+
+
+
+
+
+
+#sapply (all_tweets_distincted, function(x) length(unique(x)))
+
+all_tweets_distincted %>%
     ts_plot("3 hours") +
     ggplot2::theme_minimal() +
     ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +

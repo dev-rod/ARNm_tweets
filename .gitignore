@@ -2,9 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
-csv/*.csv
+26column/
+csv/*.zip
 csv/complete
-!csv/ARNmTweets_20210225231507.csv
+!csv/ARNmTweets_20210225231507.zip
 .Renviron
 gephi/Projet2
 gephi/network
+sql/
