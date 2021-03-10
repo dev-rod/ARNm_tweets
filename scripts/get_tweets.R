@@ -86,7 +86,7 @@ all_tweets_sorted <- all_tweets %>%
     arrange(status_id, followers_count, friends_count) %>%
     distinct_at(vars(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description, followers_count, friends_count))
 
-# de manière générale on garde les infos les plus récentes en fonction du nombre de followers 
+# De manière générale on garde les infos les plus récentes en fonction du nombre de followers 
 # qui a plus tendance à augmenter qu'a diminuer
 
 all_tweets_mutated <- all_tweets_sorted %>%
@@ -101,7 +101,7 @@ all_tweets_summarised <- all_tweets_mutated %>%
 
 save(all_tweets_summarised, file = "data/all_tweets_summarised.RData")
 
-# si on a encore des doublons, on regarde sur quels tweets et quels champs il subsiste des doublons pour analyse
+# Si on a encore des doublons, on regarde sur quels tweets et quels champs il subsiste des doublons pour analyse
 all_tweets_distincted <- all_tweets_summarised %>%
     distinct(status_id)
 if(nrow(all_tweets_summarised) != nrow(all_tweets_distincted)) {
