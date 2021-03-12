@@ -3,14 +3,16 @@
 # https://rtweet.info/articles/auth.html
 # https://www.infoworld.com/article/3515712/how-to-search-twitter-with-rtweet-and-r.html
 if("httpuv" %in% rownames(installed.packages()) == FALSE) {install.packages("httpuv")};library(httpuv)
-if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("lubridate")};library(lubridate)
+
 if("plyr" %in% rownames(installed.packages()) == FALSE) {install.packages("plyr")};library(plyr)
-if("rgexf" %in% rownames(installed.packages()) == FALSE) {install.packages("rgexf")};library(rgexf)
+
 if("zip" %in% rownames(installed.packages()) == FALSE) {install.packages("zip")};library(zip)
 if("wordcloud2" %in% rownames(installed.packages()) == FALSE) {install.packages("wordcloud2")};library(wordcloud2)
 if("webshot" %in% rownames(installed.packages()) == FALSE) {install.packages("webshot")};library(webshot)
 if("htmlwidgets" %in% rownames(installed.packages()) == FALSE) {install.packages("htmlwidgets")};library(htmlwidgets)
 
+if("rgexf" %in% rownames(installed.packages()) == FALSE) {install.packages("rgexf")};library(rgexf)
+if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("lubridate")};library(lubridate)
 if("textdata" %in% rownames(installed.packages()) == FALSE) {install.packages("textdata")};library(textdata)
 if("tidytext" %in% rownames(installed.packages()) == FALSE) {install.packages("tidytext")};library(tidytext)
 if("rtweet" %in% rownames(installed.packages()) == FALSE) {install.packages("rtweet")};library(rtweet)
@@ -61,158 +63,81 @@ first_big_authors <- tweets_from_big_authors_summarised[1:100,]
 tweets_retweets_relative_big_authors <- all_tweets_summarised %>%
     filter(user_id %in% first_big_authors$user_id | retweet_user_id %in% first_big_authors$user_id )
 
-# tweets_retweets_relative_big_authors$date <- substr(tweets_retweets_relative_big_authors$created_at,1,10)
-# tweets_retweets_relative_big_authors_bis <- tweets_retweets_relative_big_authors[tweets_retweets_relative_big_authors$date == '2021-02-02',]
-# 
-# tweets_retweets_relative_big_authors_bis %>%
-#     rtweet::ts_plot("weeks") +
-#     ggplot2::theme_minimal() +
-#     ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
-#     ggplot2::labs(
-#         x = 'Date',
-#         y = 'Count',
-#         title = "Frequency of arn messager Twitter statuses on february",
-#         subtitle = "Twitter status (tweet) counts aggregated using days intervals",
-#         caption = "\nSource: Data collected from Twitter's REST API via rtweet"
-#     )
-# 
-# 
-# tweets_retweets_relative_big_authors$datetime <- substr(tweets_retweets_relative_big_authors$created_at,1,10)
-# tweets_retweets_relative_big_authors$datetime <- tweets_retweets_relative_big_authors$created_at
-# by <- "days"
-# figure <- tweets_retweets_relative_big_authors_bis %>% 
-#     rtweet::ts_plot(by = by, trim = 1) +
-#     geom_point() +
-#     ggplot2::theme_minimal() +
-#     ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
-#     ggplot2::labs(
-#         title = paste0('Tweets mentioning "', "arn messager",'" by ', by),
-#         x = 'Date',
-#         y = 'Count',
-#         caption = 'Source: Twitter API'
-#     )
-# figure
-# 
-# #save
-# ggsave('tweet_volume.png', last_plot())
+# graphe du volume de récupération des tweets sur le mois de février, par jour ou semaine
+# TODO
 
-tweets_retweets_relative_big_authors_test <- tweets_retweets_relative_big_authors
 
-require(parallel)
-cl <- makeCluster(2) # or detect_cores() - 1
-clusterExport(cl = cl, c("get_sentiment", "get_sent_values", "get_nrc_sentiment", "get_nrc_values", "parLapply"))
-
-get_score <- function(text) {
-    char_v <- syuzhet::get_sentences(text)
-    text_values <- syuzhet::get_sentiment(char_v, method="nrc", language="french")
-    #text_values2 <- syuzhet::get_nrc_sentiment(char_v, language=lang)
-    #message(sum(text_values))
-    #message(text_values2)
-    return(sum(text_values))
-}
-
-tweets_sentiments <- tweets_retweets_relative_big_authors_test %>%
-    mutate(sentiment_score = get_score(text))
-
-stopCluster(cl)
 view(tweets_sentiments[,c(5,18)])
 
-# char_v <- get_sentences(tweets_retweets_relative_big_authors$text)
-# length(char_v)
-# poa_word_v <- get_tokens(tweets_retweets_relative_big_authors$text, pattern = "\\W")
-# head(char_v)
-# head(poa_word_v)
-# method <- "nrc"
-# lang <- "french"
-# my_text_values <- get_sentiment(char_v, method=method, language=lang)
-# head(my_text_values)
-# 
-# my_token_values <- get_sentiment(poa_word_v, method=method, language=lang)
-# head(my_token_values)
-
-# bing_vector <- get_sentiment(char_v, method = "bing")
-# head(bing_vector)
+# on reclasse les tweets par date
+tweets_sentiments <- tweets_sentiments %>%
+    arrange(created_at)
 
 
 # 5696
-sum(my_text_values)
+sum(tweets_sentiments$sentiment_score)
 # Le résultat, 5696 est positif, un fait qui peut indiquer que dans l'ensemble, le texte n'est pas décevant.
 # Comme alternative, nous pouvons souhaiter comprendre la tendance centrale, la valence émotionnelle moyenne.
 
-# 0.6381358
-mean(my_text_values)
-# Cette moyenne de 0.6381358 est légèrement supérieure à zéro.
+# 1.378509
+mean(tweets_sentiments$sentiment_score)
+# Cette moyenne de 1.378509 est bien supérieure à zéro.
 # Cette statistique récapitulative et d'autres similaires peuvent offrir une meilleure idée de la façon dont les émotions
 # dans le passage sont distribuées. Nous pouvons utiliser la fonction de résumé pour avoir une idée générale de la
 # répartition des sentiments dans le texte.
 
-summary(my_text_values)
-# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-# -6.0000  0.0000  0.0000  0.6381  1.0000  8.0000
+summary(tweets_sentiments$sentiment_score)
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+# -6.0000  0.0000  1.0000  1.379  4.0000  8.0000
 # Bien que ces mesures globales du sentiment puissent être informatives,
 # elles nous en disent très peu sur la façon dont le récit est structuré et comment ces sentiments positifs et négatifs
 # sont activés dans le texte. Vous pouvez donc trouver utile de tracer les valeurs dans un graphique
 # où l'axe des x représente le passage du temps du début à la fin du texte et l'axe des y mesure les degrés de sentiment positif
-# et négatif. 
-
+# et négatif.
 
 # Le get_dct_transformest similaire à la get_transformed_values fonction,
 # mais il applique la transformation cosinus discrète plus simple (DCT) à la place de la transformée de Fourier rapide.
 # Son principal avantage réside dans sa meilleure représentation des valeurs de bord dans la version lissée
 # du vecteur de sentiment.
 dct_values <- get_dct_transform(
-    my_text_values, 
-    low_pass_size = 5, 
+    tweets_sentiments$sentiment_score,
+    low_pass_size = 5,
     x_reverse_len = 100,
     scale_vals = F,
     scale_range = T
 )
 plot(
-    dct_values, 
-    type ="l", 
-    main ="tweets emotions using Transformed Values", 
-    xlab = "Narrative Time", 
-    ylab = "Emotional Valence", 
+    dct_values,
+    type ="l",
+    main ="évolution des emotions sur les tweets sur le mois de février",
+    xlab = "Narrative Time",
+    ylab = "Emotional Valence",
     col = "red"
 )
-# ici on voit une evolution positive du vaccin au fur et a mesure de la lecture du tableau de tweets, pourquoi ?
-# il serait interessant de les reclasser par date
+# ici on voit une evolution d'abord négative des tweets sur les vaccins à arn messager au fur et a mesure du mois de février,
+# un regain de confiance puis de nouveau une tendance à la négativité, pourquoi ?
 
-nrc_data <- get_nrc_sentiment(char_v)
-head(nrc_data)
-angry_items <- which(nrc_data$anger > 0)
-char_v[angry_items]
-joy_items <- which(nrc_data$joy > 0)
-char_v[joy_items]
+tweet_negative <- tweets_sentiments %>%
+    filter(sentiment_score < 0)
 
-# require(parallel)
-# cl <- makeCluster(2) # or detect_cores() - 1
-# clusterExport(cl = cl, c("get_sentiment", "get_sent_values", "get_nrc_sentiment", "get_nrc_values", "parLapply"))
-# nrc_data_token <- get_nrc_sentiment(poa_word_v, cl=cl)
-# head(nrc_data_token)
-# anger_items_token <- which(nrc_data_token$anger > 0)
-# poa_word_v[anger_items_token]
-# stopCluster(cl)
-# simple de visualiser toutes les émotions et leurs valeurs:
-# pander::pandoc.table(nrc_data[, 1:8], split.table = Inf)
-# examiner uniquement la valence positive et négative:
-# pander::pandoc.table(nrc_data[, 9:10])
+tweet_positive <- tweets_sentiments %>%
+    filter(sentiment_score >= 0)
 
-# Ces deux dernières colonnes sont celles utilisées par la méthode nrc dans la fonction get_sentiment.
-# Pour calculer une valeur unique de valence positive ou négative pour chaque phrase, les valeurs de la colonne négative sont
-# converties en nombres négatifs, puis ajoutées aux valeurs de la colonne positive :
-valence <- (nrc_data[, 9]*-1) + nrc_data[, 10]
-valence
-##  [1]  1 -1 -1  1  1  0  0 -2  0  0  1  1
+# On génère le fichier gephi pour analyser les sources de ces tweets
+tweet_negative_gexf_nodes <- data.frame(distinct(tweet_negative[,c(1,4)]) %>%
+                             dplyr::rename(
+                                 id = user_id,
+                                 label = screen_name
+                             ))
+tweet_negative_gexf_edges <- data.frame(tweet_negative[,c(1,12)] %>%
+                             dplyr::rename(
+                                 source = user_id,
+                                 target = retweet_user_id
+                             ))
+filename <- str_c("gexf/ARNmTweets_tweet_negative_", format(now(), format="%Y%m%d%H%M%S"), ".gexf")
+write.gexf(tweet_negative_gexf_nodes, tweet_negative_gexf_edges, output = filename)
 
-# le pourcentage de chaque émotion dans le texte peut être tracé sous forme de graphique à barres:
-barplot(
-    sort(colSums(prop.table(nrc_data[, 1:8]))),
-    horiz = TRUE,
-    cex.names = 0.7,
-    las = 1,
-    main = "Emotions in arn messager tweets from 100 best followed authors", xlab="Percentage"
-)
+
 
 
 # On génère le fichier gephi pour analyser le graphe des retweet
@@ -222,7 +147,6 @@ sample <- tweets_retweets_relative_big_authors
 #sample <- retweets[1:1000,]
 
 # user_id, screen_name
-# pour une raison que j'ignore le data.frame initial ne plait pas à rgexf, on recaste en data.frame
 gexf_nodes <- data.frame(distinct(sample[,c(1,4)]) %>%
                              dplyr::rename(
                                  id = user_id,
@@ -235,29 +159,7 @@ gexf_edges <- data.frame(sample[,c(1,12)] %>%
                                  source = user_id,
                                  target = retweet_user_id
                              ))
-
-# status_id
-#gexf_edgesLabel <- data.frame(sample[,2])
-# status_id
-#gexf_edgesId <- data.frame(sample[,2])
-# status_id, created_at, text, hashtags, mentions_user_id
-#gexf_edgesAtt <- data.frame(sample[,c(2,3)])
-# followers_count
-#gexf_edgesWeight <- sample$followers_count
-# user_id, screen_name, name, location, description, followers_count, friends_count
-#gexf_nodesAtt <- data.frame(distinct(sample[,c(1,4,13:17)]))
-#gexf_nodesAtt <- data.frame(distinct(sample[,c(1,4)]))
-
-# generate
 filename <- str_c("gexf/ARNmTweets_big_authors_", format(now(), format="%Y%m%d%H%M%S"), ".gexf")
-# write.gexf(nodes = gexf_nodes,
-#            edges = gexf_edges,
-#            edgesLabel = gexf_edgesLabel,
-#            edgesId = gexf_edgesId,
-#            #edgesAtt = gexf_edgesAtt,
-#            edgesWeight = gexf_edgesWeight,
-#            nodesAtt  = gexf_nodesAtt,
-#            output = filename)
 
 # https://gvegayon.github.io/rgexf/
 write.gexf(gexf_nodes, gexf_edges, output = filename)
@@ -330,15 +232,6 @@ fileName = "img/Global_wordcloud_with_tm.png"
 global_wc <- wordcloud2(df[1:100,])
 saveWidget(global_wc, "tmp.html", selfcontained = F)
 webshot::webshot("tmp.html", fileName, delay =3)
-
-
-
-data(Affairs, package = "AER")
-#sapply (all_tweets_distincted, function(x) length(unique(x)))
-Affairs %>% 
-    select_if(is.numeric) %>%
-    #map(~t.test(. ~ Affairs$gender)$p.value) %>% 
-    map(function(x) t.test(x ~ Affairs$gender)$p.value)
 
 
 
