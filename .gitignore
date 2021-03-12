@@ -3,10 +3,7 @@
 .RData
 .Ruserdata
 26column/
-csv/*.zip
-csv/louis/
 csv/complete
-!csv/ARNmTweets_20210225231507.zip
 .Renviron
 gephi/Projet2
 gephi/network

@@ -80,7 +80,6 @@ view(tweets_sentiments[,c(5,18)])
 tweets_sentiments <- tweets_sentiments %>%
     arrange(created_at)
 
-
 # 5696
 sum(tweets_sentiments$sentiment_score)
 # Le résultat, 5696 est positif, un fait qui peut indiquer que dans l'ensemble, le texte n'est pas décevant.
@@ -171,15 +170,12 @@ filename <- str_c("gexf/ARNmTweets_big_authors_", format(now(), format="%Y%m%d%H
 # https://gvegayon.github.io/rgexf/
 write.gexf(gexf_nodes, gexf_edges, output = filename)
 
-
 # On génère le fichier gephi pour analyse le graphe des hashtags
 #hashtags <- all_tweets_distincted[which(!is.na(all_tweets_distincted$hashtags)) ,]
 # # user_id, retweet_user_id, "hashtags"
 # gexf_nodes <- distinct(retweets[,c(1,4)])
 # gexf_edges <- retweets[,c(17,1)]
 # gexf(nodes=gexf_nodes, edges=gexf_edges, output=str_c("gexf/ARNmTweets_", format(now(), format="%Y%m%d%H%M%S"), ".gexf"))
-
-
 
 # on génère un nuage de mots
 
