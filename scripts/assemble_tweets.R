@@ -2,7 +2,6 @@
 # https://cran.r-project.org/web/packages/rtweet/readme/README.html
 # https://rtweet.info/articles/auth.html
 # https://www.infoworld.com/article/3515712/how-to-search-twitter-with-rtweet-and-r.html
-
 if("httpuv" %in% rownames(installed.packages()) == FALSE) {install.packages("httpuv")};library(httpuv)
 if("tidyverse" %in% rownames(installed.packages()) == FALSE) {install.packages("tidyverse")};library(tidyverse)
 if("zip" %in% rownames(installed.packages()) == FALSE) {install.packages("zip")};library(zip)
@@ -44,10 +43,8 @@ readTweetFile <- function(filename)
     
     # on retire les colonnes en trop
     tweets <- tweets[,c(1:5,8:9,12,14,17,30,48,54,73:75,78,79,83,85)]
-
     uniq_tweets <- tweets %>%
         distinct_at(vars(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, retweet_count, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description, followers_count, friends_count))
-     
     uniq_tweets <- uniq_tweets %>%
         group_by(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, retweet_count, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description, followers_count, friends_count) %>%
         dplyr::mutate(sentiment_score = get_score(text))

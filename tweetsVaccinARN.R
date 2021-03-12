@@ -3,22 +3,21 @@
 # https://rtweet.info/articles/auth.html
 # https://www.infoworld.com/article/3515712/how-to-search-twitter-with-rtweet-and-r.html
 if("httpuv" %in% rownames(installed.packages()) == FALSE) {install.packages("httpuv")};library(httpuv)
-
 if("plyr" %in% rownames(installed.packages()) == FALSE) {install.packages("plyr")};library(plyr)
-
 if("zip" %in% rownames(installed.packages()) == FALSE) {install.packages("zip")};library(zip)
 if("wordcloud2" %in% rownames(installed.packages()) == FALSE) {install.packages("wordcloud2")};library(wordcloud2)
 if("webshot" %in% rownames(installed.packages()) == FALSE) {install.packages("webshot")};library(webshot)
 if("htmlwidgets" %in% rownames(installed.packages()) == FALSE) {install.packages("htmlwidgets")};library(htmlwidgets)
-
 if("rgexf" %in% rownames(installed.packages()) == FALSE) {install.packages("rgexf")};library(rgexf)
 if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("lubridate")};library(lubridate)
 if("textdata" %in% rownames(installed.packages()) == FALSE) {install.packages("textdata")};library(textdata)
-if("tidytext" %in% rownames(installed.packages()) == FALSE) {install.packages("tidytext")};library(tidytext)
 if("rtweet" %in% rownames(installed.packages()) == FALSE) {install.packages("rtweet")};library(rtweet)
-if("tidyverse" %in% rownames(installed.packages()) == FALSE) {install.packages("tidyverse")};library(tidyverse)
 # https://cran.r-project.org/web/packages/syuzhet/vignettes/syuzhet-vignette.html
 if("syuzhet" %in% rownames(installed.packages()) == FALSE) {install.packages("syuzhet")};library(syuzhet)
+if("tidytext" %in% rownames(installed.packages()) == FALSE) {install.packages("tidytext")};library(tidytext)
+
+if("tidyverse" %in% rownames(installed.packages()) == FALSE) {install.packages("tidyverse")};library(tidyverse)
+if("ggplot2" %in% rownames(installed.packages()) == FALSE) {install.packages("ggplot2")};library(ggplot2)
 
 # 298856 tweets récupérés entre le 31 janvier et le 03 mars
 load("data/all_tweets_summarised.RData")
@@ -36,12 +35,20 @@ followers_count_by_authors <- all_tweets_summarised %>%
     summarise_at(vars(followers_count), funs(max))
 quantile(followers_count_by_authors$followers_count, prob = seq(0, 1, length = 11))
 
-# graphe de la répartition
+# graphe de la répartition des auteurs par rapport à leur nombre de followers
 get_decile <- function(x) ceiling(10*rank(-x, ties.method="random") / length(x))
 followers_count_by_authors$decile <- get_decile(followers_count_by_authors$followers_count)
-library(ggplot2)
 ggplot(followers_count_by_authors, aes(x=decile, y=followers_count)) + 
     stat_summary(fun=mean, geom="line") +
+    scale_x_reverse(breaks=1:10)
+
+# deciles de la répartition des tweets par rapport à leur score de sentiment
+quantile(all_tweets_summarised$sentiment_score, prob = seq(0, 1, length = 11))
+
+# graphe de la répartition des tweets par rapport à leur score de sentiment
+all_tweets_summarised$sentiment_score_decile <- get_decile(all_tweets_summarised$sentiment_score)
+ggplot(all_tweets_summarised, aes(x=sentiment_score_decile, y=sentiment_score)) + 
+    stat_summary_bin(fun=median, bins=100, geom="line") +
     scale_x_reverse(breaks=1:10)
 
 # tweets des auteurs les plus suivis hors retweet ie avec plus de 2420 followers (dernier décile)
@@ -232,7 +239,3 @@ fileName = "img/Global_wordcloud_with_tm.png"
 global_wc <- wordcloud2(df[1:100,])
 saveWidget(global_wc, "tmp.html", selfcontained = F)
 webshot::webshot("tmp.html", fileName, delay =3)
-
-
-
-
