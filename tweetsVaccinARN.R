@@ -27,6 +27,7 @@ load("data/all_tweets_summarised.RData")
 
 # graphe du volume de récupération des tweets sur le mois de février, par jour ou semaine
 # TODO
+# cf histogramme dans powerbi ou tableau
 
 # contrôle visuel des scores de sentiments
 #head(all_tweets_summarised[,c(5,18)])
@@ -131,7 +132,15 @@ write.gexf(gexf_nodes, gexf_edges, output = filename)
 # gexf_edges <- retweets[,c(17,1)]
 # gexf(nodes=gexf_nodes, edges=gexf_edges, output=str_c("gexf/ARNmTweets_", format(now(), format="%Y%m%d%H%M%S"), ".gexf"))
 
-# on génère un nuage de mots
+
+# isolation des auteurs et cluster les plus negatifs
+# sortie d"un nuage de mots
+# tentative d'isoler des ensemble de rumeurs ou sujets de tendances négatives
+
+# isolation des auteurs et cluster les plus positifs
+# sortie d"un nuage de mots
+# tentative d'isoler des ensemble de rumeurs ou sujets de tendances positives
+
 
 
 # nuage de mots sur les hashtags

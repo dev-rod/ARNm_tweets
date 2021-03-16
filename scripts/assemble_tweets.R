@@ -90,7 +90,8 @@ if(nrow(all_tweets_summarised) != nrow(all_tweets_distincted)) {
 
 
 # On sauvegarde tous les tweets récupérés dans un fichier .RData pour gagner du temps
-save(all_tweets_summarised, file = "data/all_tweets_summarised.RData")
+#save(all_tweets_summarised, file = "data/all_tweets_summarised.RData")
+save(all_tweets_summarised, file = "data/all_tweets_summarised_arnm_only.RData")
 # On sauvegarde aussi tous les tweets récupérés dans un fichier csv zippé pour pouvoir le traiter dans d'autres outils comme tableau 
 filename_csv  <- str_c("csv/complete/ARNmTweets_full", ".csv")
 filename_zip  <- str_c("csv/complete/ARNmTweets_full", ".zip")
