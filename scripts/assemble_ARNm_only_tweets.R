@@ -1,3 +1,5 @@
+memory.limit(size=6000)
+
 # https://github.com/ropensci/rtweet
 # https://cran.r-project.org/web/packages/rtweet/readme/README.html
 # https://rtweet.info/articles/auth.html
@@ -54,7 +56,6 @@ readTweetFile <- function(filename)
 #suppressWarnings(TRUE)
 all_tweets <- ldply(.data = tweetsCsvFiles, .fun = readTweetFile, .parallel = FALSE)
 
-
 all_tweets_sorted <- all_tweets %>%
     arrange(status_id, followers_count, friends_count) %>%
     distinct_at(vars(user_id, status_id, created_at, screen_name, text, reply_to_status_id, reply_to_user_id, is_retweet, retweet_count, hashtags, mentions_user_id, retweet_status_id, retweet_user_id, name, location, description, followers_count, friends_count, sentiment_score))
@@ -84,9 +85,9 @@ if(nrow(all_tweets_summarised) != nrow(all_tweets_distincted)) {
 }
 
 # On sauvegarde tous les tweets récupérés dans un fichier .RData pour gagner du temps
-save(all_tweets_final, file = "data/all_tweets_arnm_only.RData")
+save(all_tweets_summarised, file = "data/all_tweets_arnm_only.RData")
 # On sauvegarde aussi tous les tweets récupérés dans un fichier csv zippé pour pouvoir le traiter dans d'autres outils comme tableau 
 filename_csv  <- str_c("csv/complete/ARNmTweetsOnly_full", ".csv")
 filename_zip  <- str_c("csv/complete/ARNmTweetsOnly_full", ".zip")
-write_as_csv(all_tweets_final, filename_csv, prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
+write_as_csv(all_tweets_summarised, filename_csv, prepend_ids = TRUE, na = "", fileEncoding = "UTF-8")
 zipr(filename_zip, filename_csv)
