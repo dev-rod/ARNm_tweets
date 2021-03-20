@@ -1,5 +1,5 @@
-memory.limit(size=6000)
-
+memory.size(max = TRUE)
+memory.limit(size = 8069)
 # https://github.com/ropensci/rtweet
 # https://cran.r-project.org/web/packages/rtweet/readme/README.html
 # https://rtweet.info/articles/auth.html
@@ -13,7 +13,8 @@ if("lubridate" %in% rownames(installed.packages()) == FALSE) {install.packages("
 if("rtweet" %in% rownames(installed.packages()) == FALSE) {install.packages("rtweet")};library(rtweet)
 
 tweetsCsvFiles <- list.files(path="csv", pattern="*.zip", full.names=TRUE)
-#tweetsCsvFiles <- "csv/ARNmTweets_20210131095600.zip"
+tweetsCsvFiles <- "csv/ARNmTweets_20210131095600.zip"
+tweets <- read_csv(tweetsCsvFiles, col_types = cols())
 
 get_score <- function(text) {
     return(syuzhet::get_sentences(text) %>%
